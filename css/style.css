@@ -1,0 +1,63 @@
+.barA {
+    fill: steelblue;
+}
+
+.barB {
+    fill: #FF7043;
+}
+
+.barC {
+    fill: #8BC34A;
+}
+
+.barD {
+    fill: #7E57C2;
+}
+
+/* .bar:hover { */
+/*     fill: brown; */
+/* } */
+
+.axis, .values {
+    font: 11px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.x.axis path {
+    display: none;
+}
+
+.divContainer{
+	width: 100%;
+	text-align: center;
+	display: flow-root;
+}
+
+
+.floatRight{
+	float: right;
+}
+
+.divContent{
+	width: fit-content;
+	display: block;
+	cursor:pointer;
+}
+
+.margin3{
+	margin: 3%;
+}
+
+.marginTop13{
+	margin-top: 13%;
+}
+
+.divFather{
+	display: flex;
+}

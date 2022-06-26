@@ -17,40 +17,52 @@ var yAxis = d3.axisLeft(yScale).ticks(10);
 
 var arrayValue = ["A","B","C","D"];
 
-var jsonObjectSVG = {};
-
 var i = 0;
 
-var order = "";
-
+var firstView = true;
 var dataGlobal;
 
 var svg;
+
+var newKeyOrder=[];
+var mapA = {};
+var mapB = {};
+var mapC = {};
+var mapD = {};
 
 function incrementCounter(){
 	i = i + 1;
 	return i;
 }  
 
-function sortAscending(){
-	order = "ascending";
-	updateGraph();
+function sortAscendingVarA(){
+	updateGraph("A",true);
+	updateGraph("B",false);
+	updateGraph("C",false);
+	updateGraph("D",false);
+}  
+
+function sortAscendingVarB(){
+	updateGraph("B",true);
+	updateGraph("A",false);
+	updateGraph("C",false);
+	updateGraph("D",false);
+}  
+
+function sortAscendingVarC(){
+	updateGraph("C",true);
+	updateGraph("A",false);
+	updateGraph("B",false);
+	updateGraph("D",false);
+}  
+
+function sortAscendingVarD(){
+	updateGraph("D",true);
+	updateGraph("A",false);
+	updateGraph("B",false);
+	updateGraph("C",false);
 }      
 
-function sortDescending(){
-	order = "descending";
-	updateGraph();
-}
-
-function sortMaximumMinimum(){
-	order = "maxmin";
-	updateGraph();
-}
-
-function sortNear500(){
-	order = "near500";
-	updateGraph();
-}
 
 function updateAxes(element){
 	svg = d3.select(".svg" + element);
@@ -59,7 +71,11 @@ function updateAxes(element){
 }
 
 function updateXScaleDomain(){
-	xScale.domain([1,2,3,4,5,6,7,8,9,10]);
+	if (firstView){
+		xScale.domain([1,2,3,4,5,6,7,8,9,10]);
+	} else {
+		xScale.domain(newKeyOrder);
+	}
 }
 
 function updateYScaleDomain(element){
@@ -72,9 +88,7 @@ function setSvg(element){
 	    .attr("height", height + margin.top + margin.bottom)   
 		.attr("class", "svg" + element)
 	    .append("g")                                        
-	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-	
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");	
 }
 
 function drawAxes(element){
@@ -82,90 +96,102 @@ function drawAxes(element){
         .attr("class", "xaxis"+ element)
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
-
    
     svg.append("g")
         .attr("class", "yaxis" + element)
         .call(yAxis);
 }
 
-function customOrderMaxMin(entries){
-	
-	var copyEntries = entries.slice();
-	var resultEntries = [];
-	
-	while (copyEntries.length>0){
-		maxValue = d3.max(copyEntries);
-		minValue = d3.min(copyEntries);
-		resultEntries.push(maxValue);
-		resultEntries.push(minValue);
-		var indexMax = copyEntries.indexOf(maxValue);
-		copyEntries.splice(indexMax,1);
-		var indexMin = copyEntries.indexOf(minValue);
-		copyEntries.splice(indexMin,1);
-	}
-		
-	return resultEntries;
-}
 
-function customOrderNear500(entries){
-	
-	var copyEntries = entries.slice();
-	var resultEntries = [];
-	
-	while (copyEntries.length>0){
-		resultDiffMin = 1000;
-		entryDiffMin = null;
-		for (let index=0; index < copyEntries.length; ++index){
-			resultDiff = Math.abs(copyEntries[index] - 500);
-			if (resultDiff < resultDiffMin){
-				resultDiffMin = resultDiff;
-				entryDiffMin = copyEntries[index];
-			}
-		}
-		
-		resultEntries.push(entryDiffMin);
-		var indexDiffMin = copyEntries.indexOf(entryDiffMin);
-		copyEntries.splice(indexDiffMin,1);
-	}
-			
-	return resultEntries;
-}
-
-
-function drawRects(element){
+function drawRects(variable,sortAsc){
 	i = 0;	
-	var entries = Array.from(d3.group(dataGlobal,d => d[element]).keys());	
-			
-	if (order == "ascending"){
-		entries.sort(d3.ascending);
-	} else if (order == "descending"){
-		entries.sort(d3.descending);
-	} else if (order=="maxmin"){
-		entries = customOrderMaxMin(entries);
-	} else if (order=="near500"){
-		entries = customOrderNear500(entries);
+	var map;
+		
+	var entries = Array.from(d3.group(dataGlobal,d => d[variable]).keys());	
+	
+	if (firstView){
+		entries.forEach(function(element,index,array){	
+			if (variable == "A"){
+				mapA[index+1] = element;
+			} else if (variable == "B"){
+				mapB[index+1] = element;
+			}else if (variable == "C"){
+				mapC[index+1] = element;
+			}else {
+				mapD[index+1] = element;
+			}
+		});
+	} else {
+		entries = [];
+		if (variable == "A"){
+			map = mapA;
+		} else if (variable == "B"){
+			map = mapB;
+		} else if (variable =="C"){
+			map = mapC;
+		} else {
+			map = mapD;
+		}
+		newKeyOrder.forEach(function(element,index,array){	
+			entries.push(map[element]);
+		})
 	}
-
 	
-	var bars = svg.selectAll(".bar" + element).data(entries);
+	copyNewKeyOrder = newKeyOrder.slice();
 	
-	
+	var bars = svg.selectAll(".bar" + variable).data(entries);	
 	bars.exit().remove();
 
+	if (firstView){
+		bars.enter().append("rect")
+	    .attr("class", "bar" + variable)
+	    .attr("x", function(d) { return xScale(incrementCounter()); })
+	    .attr("y", function(d) { return yScale(d); })
+	    .attr("width", xScale.bandwidth())
+	    .attr("height", function(d) { return height - yScale(d); }); 
 	
-	bars.enter().append("rect")
-    .attr("class", "bar" + element)
-    .attr("x", function(d) { return xScale(incrementCounter()); })
-    .attr("y", function(d) { return yScale(d); })
-    .attr("width", xScale.bandwidth())
-    .attr("height", function(d) { return height - yScale(d); }); 
+		bars.transition().duration(updateTime)
+	        .attr("x", function(d) { return xScale(incrementCounter()); })
+	        .attr("y", function(d) { return yScale(d); })
+	        .attr("width", xScale.bandwidth())
+	        .attr("height", function(d) { return height - yScale(d); })
+	} else {
+		bars.enter().append("rect")
+	    .attr("class", "bar" + variable)
+		.attr("x", function(d) { return xScale(newKeyOrder.shift()); })
+	    .attr("y", function(d) { return yScale(d); })
+	    .attr("width", xScale.bandwidth())
+	    .attr("height", function(d) { return height - yScale(d); }); 
+	
+		bars.transition().duration(updateTime)
+		    .attr("x", function(d) { return xScale(copyNewKeyOrder.shift()); })
+	        .attr("y", function(d) { return yScale(d); })
+	        .attr("width", xScale.bandwidth())
+	        .attr("height", function(d) { return height - yScale(d); })
+	}
+}
 
-	bars.transition().duration(updateTime)
-        .attr("x", function(d) { return xScale(incrementCounter()); })
-        .attr("y", function(d) { return yScale(d); })
-        .attr("width", xScale.bandwidth())
-        .attr("height", function(d) { return height - yScale(d); })
+function setNewDomainOrder(variable,sortAsc){
+	var map;	
+	var entries = Array.from(d3.group(dataGlobal,d => d[variable]).keys());	
+	
+	if (sortAsc){
+		newKeyOrder = [];
+		entries.sort(d3.ascending);
+		if (variable == "A"){
+			map = mapA;
+		} else if (variable == "B"){
+			map = mapB;
+		} else if (variable =="C"){
+			map = mapC;
+		} else {
+			map = mapD;
+		}
+		entries.forEach(function(element,index,array){
+			var key = parseInt(Object.keys(map).find(key => map[key] === element));
+			newKeyOrder.push(key);
+		})	
+	}
 }
 
 function drawGraph(){
@@ -174,20 +200,18 @@ function drawGraph(){
 		updateXScaleDomain();
 		updateYScaleDomain(element)
 		drawAxes(element);
-		drawRects(element);
+		drawRects(element,false);
 	})
+		firstView = false;
 }
 
-function updateGraph(){
-	arrayValue.forEach(function(element,index,array){
-		updateXScaleDomain();
-		updateYScaleDomain(element)
-		updateAxes(element);
-		drawRects(element);
-	})
+function updateGraph(variable,sortAsc){
+	setNewDomainOrder(variable,sortAsc)
+	updateXScaleDomain();
+	updateYScaleDomain(variable)
+	updateAxes(variable);
+	drawRects(variable,sortAsc);	
 }
-
-
 
 d3.json("data/dataset.json")
 	.then(function(data) {
